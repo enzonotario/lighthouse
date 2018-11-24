@@ -20,6 +20,11 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
+    public function companyUid(): BelongsTo
+    {
+        return $this->belongsTo(CompanyUid::class, 'company_id', 'uid');
+    }
+
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);

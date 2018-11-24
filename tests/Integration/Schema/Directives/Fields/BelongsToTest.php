@@ -3,6 +3,7 @@
 namespace Tests\Integration\Schema\Directives\Fields;
 
 use Tests\DBTestCase;
+use Tests\Utils\Models\CompanyUid;
 use Tests\Utils\Models\User;
 use Tests\Utils\Models\Team;
 use Tests\Utils\Models\Company;
@@ -38,9 +39,11 @@ class BelongsToTest extends DBTestCase
         parent::setUp();
 
         $this->company = factory(Company::class)->create();
+        $this->companyUid = factory(CompanyUid::class)->create();
         $this->team = factory(Team::class)->create();
         $this->user = factory(User::class)->create([
             'company_id' => $this->company->getKey(),
+            'company_uid' => $this->companyUid->getKey(),
             'team_id' => $this->team->getKey(),
         ]);
     }
@@ -77,6 +80,40 @@ class BelongsToTest extends DBTestCase
         $result = $this->execute($schema, $query);
 
         $this->assertEquals($this->company->name, array_get($result, 'data.user.company.name'));
+    }
+
+    /**
+     * @test
+     */
+    public function itCanResolveBelongsToRelationshipWithCustomKeys()
+    {
+        $this->be($this->user);
+
+        $schema = '
+        type Company {
+            name: String!
+        }
+        
+        type User {
+            companyUid: Company @belongsTo(relation: "companyUid")
+        }
+        
+        type Query {
+            user: User @auth
+        }
+        ';
+        $query = '
+        {
+            user {
+                companyUid {
+                    name
+                }
+            }
+        }
+        ';
+        $result = $this->execute($schema, $query);
+
+        $this->assertEquals($this->companyUid->name, array_get($result, 'data.user.companyUid.name'));
     }
 
     /**
